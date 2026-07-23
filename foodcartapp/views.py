@@ -1,7 +1,7 @@
-import json
-
 from django.http import JsonResponse
 from django.templatetags.static import static
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
 
 from .models import Order, OrderItem, Product, RestaurantMenuItem
 
@@ -68,28 +68,23 @@ def product_list_api(request):
     )
 
 
+@api_view(["POST"])
 def register_order(request):
-    try:
-        order_info = json.loads(request.body.decode())
-    except ValueError:
-        return JsonResponse(
-            {"error": "Неверный JSON"},
-            status=400,
-        )
+    order_info = request.data
 
     firstname = order_info.get("firstname")
     lastname = order_info.get("lastname", "")
     phonenumber = order_info.get("phonenumber")
     address = order_info.get("address")
     if not firstname or not phonenumber or not address:
-        return JsonResponse(
+        return Response(
             {"error": "Имя, телефон и адрес обязательны"},
             status=400,
         )
 
     products = order_info.get("products")
     if not products:
-        return JsonResponse(
+        return Response(
             {"error": "Нет товаров в заказе"},
             status=400,
         )
@@ -104,7 +99,7 @@ def register_order(request):
         product_id = item.get("product")
         quantity = item.get("quantity")
         if not product_id or quantity is None or quantity < 1:
-            return JsonResponse(
+            return Response(
                 {"error": "Неверный товар или количество"},
                 status=400,
             )
@@ -112,7 +107,7 @@ def register_order(request):
             product_id=product_id, availability=True
         ).first()
         if not menu_item:
-            return JsonResponse(
+            return Response(
                 {"error": f"Товар с id {product_id} недоступен ни в одном ресторане"},
                 status=400,
             )
@@ -123,4 +118,4 @@ def register_order(request):
             quantity=quantity,
         )
 
-    return JsonResponse({"status": "ok", "order_id": order.id})
+    return Response({"status": "ok", "order_id": order.id})
