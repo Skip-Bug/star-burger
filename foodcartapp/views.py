@@ -83,9 +83,25 @@ def register_order(request):
         )
 
     products = order_info.get("products")
-    if not products:
+
+    if "products" not in order_info:
         return Response(
-            {"error": "Нет товаров в заказе"},
+            {"error": "products: Обязательное поле."},
+            status=400,
+        )
+    if products is None:
+        return Response(
+            {"error": "products: Это поле не может быть пустым."},
+            status=400,
+        )
+    if not isinstance(products, list):
+        return Response(
+            {"error": "products: Ожидался list со значениями, но был получен 'str'"},
+            status=400,
+        )
+    if len(products) == 0:
+        return Response(
+            {"error": "products: Этот список не может быть пустым."},
             status=400,
         )
 
