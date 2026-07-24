@@ -1,10 +1,19 @@
 from django.http import JsonResponse
 from django.templatetags.static import static
+from phonenumbers import is_valid_number, parse
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .models import Order, OrderItem, Product, RestaurantMenuItem
+
+
+def validate_phone(phone):
+    try:
+        parsed = parse(phone, "RU")
+        return is_valid_number(parsed)
+    except:
+        return False
 
 
 def banners_list_api(request):
@@ -73,13 +82,42 @@ def product_list_api(request):
 def register_order(request):
     order_info = request.data
 
-    firstname = order_info.get("firstname")
-    lastname = order_info.get("lastname", "")
-    phonenumber = order_info.get("phonenumber")
-    address = order_info.get("address")
-    if not firstname or not phonenumber or not address:
+    required_keys = ["firstname", "lastname", "phonenumber", "address"]
+    missing = []
+    for key in required_keys:
+        if key not in order_info:
+            missing.append(key)
+    if missing:
         return Response(
-            {"error": "Имя, телефон и адрес обязательны"},
+            {"error": f"{', '.join(missing)}: Обязательное поле."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    empty_fields = []
+    for field in ["firstname", "lastname", "phonenumber", "address"]:
+        value = order_info[field]
+        if value is None or value == "":
+            empty_fields.append(field)
+    if empty_fields:
+        return Response(
+            {"error": f"{', '.join(empty_fields)}: Это поле не может быть пустым."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    for field in required_keys:
+        if not isinstance(order_info[field], str):
+            return Response(
+                {"error": f"{field}: Not a valid string."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+    firstname = order_info["firstname"]
+    lastname = order_info["lastname"]
+    phonenumber = order_info["phonenumber"]
+    address = order_info["address"]
+
+    if not validate_phone(phonenumber):
+        return Response(
+            {"error": "phonenumber: Введен некорректный номер телефона."},
             status=status.HTTP_400_BAD_REQUEST,
         )
 
@@ -115,17 +153,28 @@ def register_order(request):
     for item in products:
         product_id = item.get("product")
         quantity = item.get("quantity")
-        if not product_id or quantity is None or quantity < 1:
+        if product_id is None:
             return Response(
-                {"error": "Неверный товар или количество"},
+                {"error": "Неверный товар"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if quantity is None or quantity < 1:
+            return Response(
+                {"error": "Не верное количество количество"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if not Product.objects.filter(id=product_id).exists():
+            return Response(
+                {"error": f"products: Недопустимый первичный ключ '{product_id}'."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         menu_item = RestaurantMenuItem.objects.filter(
             product_id=product_id, availability=True
         ).first()
         if not menu_item:
             return Response(
-                {"error": f"Товар с id {product_id} недоступен ни в одном ресторане"},
+                {"error": f"Товар с id {product_id} недоступен ни в одном ресторане."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
