@@ -29,9 +29,9 @@ class Restaurant(models.Model):
 
 class ProductQuerySet(models.QuerySet):
     def available(self):
-        products = RestaurantMenuItem.objects.filter(availability=True).values_list(
-            "product"
-        )
+        products = RestaurantMenuItem.objects.filter(
+            availability=True,
+        ).values_list("product")
         return self.filter(pk__in=products)
 
 
@@ -57,7 +57,12 @@ class Product(models.Model):
         on_delete=models.SET_NULL,
     )
     price = models.DecimalField(
-        "цена", max_digits=8, decimal_places=2, validators=[MinValueValidator(0)]
+        "цена",
+        max_digits=8,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+        ],
     )
     image = models.ImageField("картинка")
     special_status = models.BooleanField(
@@ -99,7 +104,7 @@ class RestaurantMenuItem(models.Model):
     class Meta:
         verbose_name = "пункт меню ресторана"
         verbose_name_plural = "пункты меню ресторана"
-        unique_together = [["restaurant", "product"]]
+        unique_together = ("restaurant", "product")
 
     def __str__(self):
         return f"{self.restaurant.name} - {self.product.name}"
