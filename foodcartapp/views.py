@@ -1,5 +1,6 @@
 from django.http import JsonResponse
 from django.templatetags.static import static
+from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
@@ -79,7 +80,7 @@ def register_order(request):
     if not firstname or not phonenumber or not address:
         return Response(
             {"error": "Имя, телефон и адрес обязательны"},
-            status=400,
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     products = order_info.get("products")
@@ -87,22 +88,22 @@ def register_order(request):
     if "products" not in order_info:
         return Response(
             {"error": "products: Обязательное поле."},
-            status=400,
+            status=status.HTTP_400_BAD_REQUEST,
         )
     if products is None:
         return Response(
             {"error": "products: Это поле не может быть пустым."},
-            status=400,
+            status=status.HTTP_400_BAD_REQUEST,
         )
     if not isinstance(products, list):
         return Response(
             {"error": "products: Ожидался list со значениями, но был получен 'str'"},
-            status=400,
+            status=status.HTTP_400_BAD_REQUEST,
         )
     if len(products) == 0:
         return Response(
             {"error": "products: Этот список не может быть пустым."},
-            status=400,
+            status=status.HTTP_400_BAD_REQUEST,
         )
 
     order = Order.objects.create(
@@ -117,7 +118,7 @@ def register_order(request):
         if not product_id or quantity is None or quantity < 1:
             return Response(
                 {"error": "Неверный товар или количество"},
-                status=400,
+                status=status.HTTP_400_BAD_REQUEST,
             )
         menu_item = RestaurantMenuItem.objects.filter(
             product_id=product_id, availability=True
@@ -125,7 +126,7 @@ def register_order(request):
         if not menu_item:
             return Response(
                 {"error": f"Товар с id {product_id} недоступен ни в одном ресторане"},
-                status=400,
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         OrderItem.objects.create(
@@ -134,4 +135,6 @@ def register_order(request):
             quantity=quantity,
         )
 
-    return Response({"status": "ok", "order_id": order.id})
+    return Response(
+        {"status": "ok", "order_id": order.id}, status=status.HTTP_201_CREATED
+    )
