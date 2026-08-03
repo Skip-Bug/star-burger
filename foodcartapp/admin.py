@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.shortcuts import reverse
+from django.urls import reverse
 from django.templatetags.static import static
 from django.utils.html import format_html
 
@@ -130,3 +130,4 @@ class OrderAdmin(admin.ModelAdmin):
         "client_address",
         "created_at",
     )
+    list_display_links = ("id", "phone_number", "client_first_name")
