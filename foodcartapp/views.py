@@ -1,7 +1,7 @@
 from django.http import JsonResponse
 from django.templatetags.static import static
 from phonenumbers import NumberParseException, is_valid_number, parse
-from rest_framework import serializers, status
+from rest_framework import serializers
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer
@@ -106,6 +106,7 @@ class OrderSerializer(ModelSerializer):
         many=True,
         source="items",
         required=True,
+        write_only=True,
     )
 
     class Meta:
@@ -152,6 +153,6 @@ def register_order(request):
             restaurant_menu_item=None,
         )
 
-    return Response(
-        {"status": "ok", "order_id": order.id}, status=status.HTTP_201_CREATED
-    )
+    response_serializer = OrderSerializer(order)
+
+    return Response(response_serializer.data, status=201)

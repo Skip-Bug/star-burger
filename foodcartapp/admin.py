@@ -111,7 +111,7 @@ class ProductCategoryAdmin(admin.ModelAdmin):
 class OrderItemsInline(admin.TabularInline):
     fields = ("restaurant_menu_item", "quantity")
     model = OrderItem
-    extra = 1
+    extra = 0
 
 
 @admin.register(Order)
