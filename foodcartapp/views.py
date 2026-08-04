@@ -1,18 +1,19 @@
 from django.http import JsonResponse
 from django.templatetags.static import static
-from phonenumbers import is_valid_number, parse
-from rest_framework import status
+from phonenumbers import NumberParseException, is_valid_number, parse
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
+from rest_framework.serializers import ModelSerializer
 
-from .models import Order, OrderItem, Product, RestaurantMenuItem
+from .models import Order, OrderItem, Product
 
 
 def validate_phone(phone):
     try:
         parsed = parse(phone, "RU")
         return is_valid_number(parsed)
-    except:
+    except NumberParseException:
         return False
 
 
@@ -78,110 +79,77 @@ def product_list_api(request):
     )
 
 
+class OrderItemSerializer(ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ["product", "quantity"]
+
+
+class OrderSerializer(ModelSerializer):
+    firstname = serializers.CharField(
+        source="client_first_name",
+        required=True,
+    )
+    lastname = serializers.CharField(
+        source="client_last_name",
+        required=True,
+    )
+    address = serializers.CharField(
+        source="client_address",
+        required=True,
+    )
+    phonenumber = serializers.CharField(
+        source="phone_number",
+        required=True,
+    )
+    products = OrderItemSerializer(
+        many=True,
+        source="items",
+        required=True,
+    )
+
+    class Meta:
+        model = Order
+        fields = [
+            "firstname",
+            "lastname",
+            "phonenumber",
+            "address",
+            "products",
+        ]
+
+    def validate_phonenumber(self, value):
+        if not validate_phone(value):
+            raise serializers.ValidationError("Введен некорректный номер телефона.")
+        return value
+
+    def validate_products(self, value):
+        if not value:
+            raise serializers.ValidationError("Этот список не может быть пустым.")
+        return value
+
+
 @api_view(["POST"])
 def register_order(request):
-    order_info = request.data
 
-    required_keys = ["firstname", "lastname", "phonenumber", "address"]
-    missing = []
-    for key in required_keys:
-        if key not in order_info:
-            missing.append(key)
-    if missing:
-        return Response(
-            {"error": f"{', '.join(missing)}: Обязательное поле."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    serializer = OrderSerializer(data=request.data)
+    serializer.is_valid(raise_exception=True)
 
-    empty_fields = []
-    for field in ["firstname", "lastname", "phonenumber", "address"]:
-        value = order_info[field]
-        if value is None or value == "":
-            empty_fields.append(field)
-    if empty_fields:
-        return Response(
-            {"error": f"{', '.join(empty_fields)}: Это поле не может быть пустым."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    for field in required_keys:
-        if not isinstance(order_info[field], str):
-            return Response(
-                {"error": f"{field}: Not a valid string."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-    firstname = order_info["firstname"]
-    lastname = order_info["lastname"]
-    phonenumber = order_info["phonenumber"]
-    address = order_info["address"]
-
-    if not validate_phone(phonenumber):
-        return Response(
-            {"error": "phonenumber: Введен некорректный номер телефона."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-
-    products = order_info.get("products")
-
-    if "products" not in order_info:
-        return Response(
-            {"error": "products: Обязательное поле."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    if products is None:
-        return Response(
-            {"error": "products: Это поле не может быть пустым."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    if not isinstance(products, list):
-        return Response(
-            {"error": "products: Ожидался list со значениями, но был получен 'str'"},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
-    if len(products) == 0:
-        return Response(
-            {"error": "products: Этот список не может быть пустым."},
-            status=status.HTTP_400_BAD_REQUEST,
-        )
+    validated = serializer.validated_data
 
     order = Order.objects.create(
-        client_first_name=firstname,
-        client_last_name=lastname,
-        phone_number=phonenumber,
-        client_address=address,
+        client_first_name=validated["client_first_name"],
+        client_last_name=validated["client_last_name"],
+        phone_number=validated["phone_number"],
+        client_address=validated["client_address"],
     )
-    for item in products:
-        product_id = item.get("product")
-        quantity = item.get("quantity")
-        if product_id is None:
-            return Response(
-                {"error": "Неверный товар"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if quantity is None or quantity < 1:
-            return Response(
-                {"error": "Не верное количество количество"},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        if not Product.objects.filter(id=product_id).exists():
-            return Response(
-                {"error": f"products: Недопустимый первичный ключ '{product_id}'."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
 
-        menu_item = RestaurantMenuItem.objects.filter(
-            product_id=product_id, availability=True
-        ).first()
-        if not menu_item:
-            return Response(
-                {"error": f"Товар с id {product_id} недоступен ни в одном ресторане."},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
+    for item in validated["items"]:
         OrderItem.objects.create(
             order=order,
-            restaurant_menu_item=menu_item,
-            quantity=quantity,
+            product=item["product"],
+            quantity=item["quantity"],
+            restaurant_menu_item=None,
         )
 
     return Response(

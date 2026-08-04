@@ -138,22 +138,24 @@ class OrderItem(models.Model):
         Order,
         on_delete=models.CASCADE,
         related_name="items",
-        verbose_name="заказ",
+    )
+    product = models.ForeignKey(
+        Product,
+        on_delete=models.PROTECT,
+        verbose_name="Продукт",
     )
     restaurant_menu_item = models.ForeignKey(
         RestaurantMenuItem,
         on_delete=models.PROTECT,
-        related_name="order_items",
-        verbose_name="продукт",
+        null=True,
+        blank=True,
+        verbose_name="Пункт меню",
     )
-    quantity = models.PositiveIntegerField(
-        validators=[MinValueValidator(1)],
-        verbose_name="Количество",
-    )
+    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
 
     class Meta:
         verbose_name = "Состав заказа"
         verbose_name_plural = "Состав заказов"
 
     def __str__(self):
-        return f"{self.restaurant_menu_item.product.name} x {self.quantity}"
+        return f"{self.product.name} x {self.quantity}"
