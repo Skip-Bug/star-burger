@@ -1,6 +1,6 @@
 from django.contrib import admin
-from django.urls import reverse
 from django.templatetags.static import static
+from django.urls import reverse
 from django.utils.html import format_html
 
 from .models import (
