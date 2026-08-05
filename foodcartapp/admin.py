@@ -132,3 +132,15 @@ class OrderAdmin(admin.ModelAdmin):
         "created_at",
     )
     list_display_links = ("id", "phone_number", "client_first_name")
+
+    def save_formset(self, request, form, formset, change):
+        instances = formset.save(commit=False)
+
+        for obj in formset.deleted_objects:
+            obj.delete()
+
+        for obj in instances:
+            if isinstance(obj, OrderItem):
+                obj.price = obj.product.price
+            obj.save()
+        formset.save_m2m()
