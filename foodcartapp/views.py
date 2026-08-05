@@ -150,7 +150,7 @@ def register_order(request):
             order=order,
             product=item["product"],
             quantity=item["quantity"],
-            restaurant_menu_item=None,
+            price=item["product"].price,
         )
 
     response_serializer = OrderSerializer(order)

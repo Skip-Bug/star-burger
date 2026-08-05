@@ -109,7 +109,8 @@ class ProductCategoryAdmin(admin.ModelAdmin):
 
 
 class OrderItemsInline(admin.TabularInline):
-    fields = ("restaurant_menu_item", "quantity")
+    fields = ("product", "quantity", "price")
+    readonly_fields = ("price",)
     model = OrderItem
     extra = 0
 
