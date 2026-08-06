@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.http import JsonResponse
 from django.templatetags.static import static
 from phonenumbers import NumberParseException, is_valid_number, parse
@@ -131,6 +132,7 @@ class OrderSerializer(ModelSerializer):
 
 
 @api_view(["POST"])
+@transaction.atomic
 def register_order(request):
 
     serializer = OrderSerializer(data=request.data)
