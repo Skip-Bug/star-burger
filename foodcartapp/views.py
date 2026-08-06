@@ -2,7 +2,7 @@ from django.db import transaction
 from django.http import JsonResponse
 from django.templatetags.static import static
 from phonenumbers import NumberParseException, is_valid_number, parse
-from rest_framework import serializers
+from rest_framework import serializers, status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer
@@ -140,21 +140,27 @@ def register_order(request):
 
     validated = serializer.validated_data
 
-    order = Order.objects.create(
-        client_first_name=validated["client_first_name"],
-        client_last_name=validated["client_last_name"],
-        phone_number=validated["phone_number"],
-        client_address=validated["client_address"],
-    )
-
-    for item in validated["items"]:
-        OrderItem.objects.create(
-            order=order,
-            product=item["product"],
-            quantity=item["quantity"],
-            price=item["product"].price,
+    try:
+        order = Order.objects.create(
+            client_first_name=validated["client_first_name"],
+            client_last_name=validated["client_last_name"],
+            phone_number=validated["phone_number"],
+            client_address=validated["client_address"],
         )
 
+        for item in validated["items"]:
+            OrderItem.objects.create(
+                order=order,
+                product=item["product"],
+                quantity=item["quantity"],
+                price=item["product"].price,
+            )
+    except Exception as e:
+        print(f"Order creation error: {e}")
+        return Response(
+            {"error": "Не удалось создать заказ. Попробуйте позже."},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
     response_serializer = OrderSerializer(order)
 
-    return Response(response_serializer.data, status=201)
+    return Response(response_serializer.data, status=status.HTTP_201_CREATED)
