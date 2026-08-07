@@ -139,7 +139,7 @@ class OrderAdmin(admin.ModelAdmin):
         ),
         (
             "Статус и комментарий",
-            {"fields": ("status", "comment")},
+            {"fields": ("status", "payment_method", "comment")},
         ),
         (
             "Информация",
@@ -149,6 +149,7 @@ class OrderAdmin(admin.ModelAdmin):
     list_filter = (
         "created_at",
         "status",
+        "payment_method",
     )
     search_fields = (
         "phone_number",
@@ -162,10 +163,13 @@ class OrderAdmin(admin.ModelAdmin):
         "client_address",
         "created_at",
         "status",
-        "get_status_display",
+        "payment_method",
     )
     list_display_links = ("id", "phone_number", "client_first_name")
-    list_editable = ("status",)
+    list_editable = (
+        "status",
+        "payment_method",
+    )
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)

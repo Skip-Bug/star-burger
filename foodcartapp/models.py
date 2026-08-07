@@ -139,6 +139,21 @@ class Order(models.Model):
         ("returned", "Возврат"),
         ("erorr", "Ошибка"),
     ]
+    PAYMENT_METHOD = [
+        ("", "не выбрано"),
+        ("cash", "наличными"),
+        ("card", "картой"),
+        ("QR", "QR-кодом"),
+        ("online", "онлайн"),
+    ]
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD,
+        null=True,
+        default="не выбрано",
+        db_index=True,
+        verbose_name="Способ оплаты",
+    )
     status = models.CharField(
         max_length=20,
         choices=ORDER_STATUS,
@@ -214,6 +229,7 @@ class OrderItem(models.Model):
     )
 
     class Meta:
+        unique_together = ("order", "product")
         verbose_name = "Продукт"
         verbose_name_plural = "Состав заказа"
 
