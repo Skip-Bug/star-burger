@@ -2,6 +2,7 @@ from django import forms
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
 from django.contrib.auth.decorators import user_passes_test
+from django.db.models import Case, IntegerField, Value, When
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
@@ -104,9 +105,18 @@ def view_restaurants(request):
 
 @user_passes_test(is_manager, login_url="restaurateur:login")
 def view_orders(request):
+
     order_items = (
-        Order.objects.with_total_cost()
-        .order_by("created_at")
+        Order.objects.active()
+        .with_total_cost()
+        .annotate(
+            is_new=Case(
+                When(status="new", then=Value(1)),
+                default=Value(0),
+                output_field=IntegerField(),
+            )
+        )
+        .order_by("-is_new", "created_at")
         .prefetch_related("items__product")
     )
     return render(

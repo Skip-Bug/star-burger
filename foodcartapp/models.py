@@ -5,6 +5,16 @@ from phonenumber_field.modelfields import PhoneNumberField
 
 
 class OrderQuerySet(models.QuerySet):
+    def active(self):
+        active_statuses = [
+            "new",
+            "confirmed",
+            "in_progress",
+            "ready",
+            "in_delivery",
+        ]
+        return self.filter(status__in=active_statuses)
+
     def with_total_cost(self):
         total_cost = Sum(F("items__quantity") * F("items__price"))
         return self.annotate(total_cost=total_cost)
@@ -118,6 +128,25 @@ class RestaurantMenuItem(models.Model):
 
 
 class Order(models.Model):
+    ORDER_STATUS = [
+        ("new", "Новый"),
+        ("confirmed", "Подтверждён"),
+        ("in_progress", "На сборке"),
+        ("ready", "Готов к доставки"),
+        ("in_delivery", "В доставке"),
+        ("completed", "Выполнен"),
+        ("canceled", "Отменён"),
+        ("returned", "Возврат"),
+        ("erorr", "Ошибка"),
+    ]
+    status = models.CharField(
+        max_length=20,
+        choices=ORDER_STATUS,
+        default="new",
+        db_index=True,
+        verbose_name="Статус заказа",
+    )
+
     client_first_name = models.CharField("Имя клиента", max_length=50)
     client_last_name = models.CharField(
         "Фамилия клиента",
@@ -125,7 +154,11 @@ class Order(models.Model):
         blank=True,
     )
     phone_number = PhoneNumberField("Номер телефона", db_index=True)
-    client_address = models.CharField("Адрес клиента", max_length=200)
+    client_address = models.CharField(
+        "Адрес клиента",
+        max_length=200,
+        db_index=True,
+    )
     created_at = models.DateTimeField(
         "Время создания заказа",
         auto_now_add=True,

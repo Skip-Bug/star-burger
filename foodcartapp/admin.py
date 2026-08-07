@@ -111,7 +111,11 @@ class ProductCategoryAdmin(admin.ModelAdmin):
 
 
 class OrderItemsInline(admin.TabularInline):
-    fields = ("product", "quantity", "price")
+    fields = (
+        "product",
+        "quantity",
+        "price",
+    )
     readonly_fields = ("price",)
     model = OrderItem
     extra = 0
@@ -120,7 +124,32 @@ class OrderItemsInline(admin.TabularInline):
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
     inlines = [OrderItemsInline]  # noqa: RUF012
-    list_filter = ("created_at",)
+    readonly_fields = ("created_at",)
+    fieldsets = (
+        (
+            "Клиент",
+            {
+                "fields": (
+                    "client_first_name",
+                    "client_last_name",
+                    "phone_number",
+                    "client_address",
+                )
+            },
+        ),
+        (
+            "Статус",
+            {"fields": ("status",)},
+        ),
+        (
+            "Информация",
+            {"fields": ("created_at",)},
+        ),
+    )
+    list_filter = (
+        "created_at",
+        "status",
+    )
     search_fields = (
         "phone_number",
         "client_first_name",
@@ -132,8 +161,11 @@ class OrderAdmin(admin.ModelAdmin):
         "client_first_name",
         "client_address",
         "created_at",
+        "status",
+        "get_status_display",
     )
     list_display_links = ("id", "phone_number", "client_first_name")
+    list_editable = ("status",)
 
     def save_formset(self, request, form, formset, change):
         instances = formset.save(commit=False)
