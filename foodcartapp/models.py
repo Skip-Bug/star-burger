@@ -167,6 +167,19 @@ class Order(models.Model):
         auto_now_add=True,
         db_index=True,
     )
+    called_at = models.DateTimeField(
+        "Время звонка",
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+    delivered_at = models.DateTimeField(
+        "Дата доставки",
+        null=True,
+        blank=True,
+        db_index=True,
+    )
+
     objects = OrderQuerySet.as_manager()
 
     class Meta:

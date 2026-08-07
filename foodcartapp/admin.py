@@ -143,7 +143,7 @@ class OrderAdmin(admin.ModelAdmin):
         ),
         (
             "Информация",
-            {"fields": ("created_at",)},
+            {"fields": ("created_at", "called_at", "delivered_at")},
         ),
     )
     list_filter = (
