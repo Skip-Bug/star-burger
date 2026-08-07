@@ -146,7 +146,10 @@ class Order(models.Model):
         db_index=True,
         verbose_name="Статус заказа",
     )
-
+    comment = models.TextField(
+        "Комментарий к заказу",
+        blank=True,
+    )
     client_first_name = models.CharField("Имя клиента", max_length=50)
     client_last_name = models.CharField(
         "Фамилия клиента",

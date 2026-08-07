@@ -138,8 +138,8 @@ class OrderAdmin(admin.ModelAdmin):
             },
         ),
         (
-            "Статус",
-            {"fields": ("status",)},
+            "Статус и комментарий",
+            {"fields": ("status", "comment")},
         ),
         (
             "Информация",
