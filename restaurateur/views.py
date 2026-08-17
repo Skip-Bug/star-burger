@@ -7,7 +7,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
 
-from foodcartapp.models import Order, Product, Restaurant, get_restaurants_for_order
+from foodcartapp.models import Order, Product, Restaurant
+from foodcartapp.utils import get_restaurants_for_order
 
 
 class Login(forms.Form):
