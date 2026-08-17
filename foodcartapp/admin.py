@@ -13,8 +13,8 @@ from .models import (
     ProductCategory,
     Restaurant,
     RestaurantMenuItem,
-    get_restaurants_for_order,
 )
+from .utils import get_restaurants_for_order
 
 
 class OrderForm(forms.ModelForm):
@@ -213,3 +213,8 @@ class OrderAdmin(admin.ModelAdmin):
         ):
             return redirect(next_url)
         return super().response_change(request, obj)
+
+    def save_model(self, request, obj, form, change):
+        if obj.restaurant and obj.status == "new":
+            obj.status = "in_progress"
+        super().save_model(request, obj, form, change)
