@@ -1,3 +1,4 @@
+from django import forms
 from django.contrib import admin
 from django.shortcuts import redirect
 from django.templatetags.static import static
@@ -12,7 +13,22 @@ from .models import (
     ProductCategory,
     Restaurant,
     RestaurantMenuItem,
+    get_restaurants_for_order,
 )
+
+
+class OrderForm(forms.ModelForm):
+    class Meta:
+        model = Order
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            if self.instance.items.exists():
+                self.fields["restaurant"].queryset = get_restaurants_for_order(
+                    self.instance
+                )
 
 
 class RestaurantMenuItemInline(admin.TabularInline):
@@ -123,6 +139,7 @@ class OrderItemsInline(admin.TabularInline):
 
 @admin.register(Order)
 class OrderAdmin(admin.ModelAdmin):
+    form = OrderForm
     inlines = [OrderItemsInline]  # noqa: RUF012
     readonly_fields = ("created_at",)
     fieldsets = (
@@ -140,6 +157,10 @@ class OrderAdmin(admin.ModelAdmin):
         (
             "Статус и комментарий",
             {"fields": ("status", "payment_method", "comment")},
+        ),
+        (
+            "Ресторан",
+            {"fields": ("restaurant",)},
         ),
         (
             "Информация",

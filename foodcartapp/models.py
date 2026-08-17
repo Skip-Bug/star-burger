@@ -1,7 +1,24 @@
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import F, Sum
+from django.db.models import Count, F, Sum
 from phonenumber_field.modelfields import PhoneNumberField
+
+
+def get_restaurants_for_order(order):
+
+    product_ids = order.items.values_list("product_id", flat=True)
+    if not product_ids:
+        return Restaurant.objects.none()
+
+    restaurant_ids = (
+        RestaurantMenuItem.objects.filter(product_id__in=product_ids, availability=True)
+        .values("restaurant_id")
+        .annotate(matched_count=Count("product_id"))
+        .filter(matched_count=len(product_ids))
+        .values_list("restaurant_id", flat=True)
+    )
+
+    return Restaurant.objects.filter(id__in=restaurant_ids)
 
 
 class OrderQuerySet(models.QuerySet):
@@ -116,7 +133,11 @@ class RestaurantMenuItem(models.Model):
         related_name="menu_items",
         verbose_name="продукт",
     )
-    availability = models.BooleanField("в продаже", default=True, db_index=True)
+    availability = models.BooleanField(
+        "в продаже",
+        default=True,
+        db_index=True,
+    )
 
     class Meta:
         verbose_name = "пункт меню ресторана"
@@ -193,6 +214,14 @@ class Order(models.Model):
         null=True,
         blank=True,
         db_index=True,
+    )
+    restaurant = models.ForeignKey(
+        "Restaurant",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+        verbose_name="Ресторан",
     )
 
     objects = OrderQuerySet.as_manager()
