@@ -1,24 +1,7 @@
 from django.core.validators import MinValueValidator
 from django.db import models
-from django.db.models import Count, F, Sum
+from django.db.models import F, Sum
 from phonenumber_field.modelfields import PhoneNumberField
-
-
-def get_restaurants_for_order(order):
-
-    product_ids = order.items.values_list("product_id", flat=True)
-    if not product_ids:
-        return Restaurant.objects.none()
-
-    restaurant_ids = (
-        RestaurantMenuItem.objects.filter(product_id__in=product_ids, availability=True)
-        .values("restaurant_id")
-        .annotate(matched_count=Count("product_id"))
-        .filter(matched_count=len(product_ids))
-        .values_list("restaurant_id", flat=True)
-    )
-
-    return Restaurant.objects.filter(id__in=restaurant_ids)
 
 
 class OrderQuerySet(models.QuerySet):
@@ -37,6 +20,23 @@ class OrderQuerySet(models.QuerySet):
         return self.annotate(total_cost=total_cost)
 
 
+class Location(models.Model):
+    address = models.CharField(
+        "Адрес",
+        max_length=255,
+        unique=True,
+    )
+    lat = models.FloatField("Широта", blank=True, null=True)
+    lon = models.FloatField("Долгота", blank=True, null=True)
+
+    class Meta:
+        verbose_name = "Локация"
+        verbose_name_plural = "Локации"
+
+    def __str__(self):
+        return self.address
+
+
 class Restaurant(models.Model):
     name = models.CharField(
         "название",
@@ -46,6 +46,14 @@ class Restaurant(models.Model):
         "адрес",
         max_length=100,
         blank=True,
+    )
+    location = models.ForeignKey(
+        "Location",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="restaurants",
+        verbose_name="Координаты ресторана",
     )
     contact_phone = models.CharField(
         "контактный телефон",
@@ -193,11 +201,21 @@ class Order(models.Model):
         blank=True,
     )
     phone_number = PhoneNumberField("Номер телефона", db_index=True)
+
     client_address = models.CharField(
         "Адрес клиента",
         max_length=200,
         db_index=True,
     )
+    location = models.ForeignKey(
+        "Location",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="orders",
+        verbose_name="Координаты клиента",
+    )
+
     created_at = models.DateTimeField(
         "Время создания заказа",
         auto_now_add=True,

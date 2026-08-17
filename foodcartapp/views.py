@@ -7,6 +7,8 @@ from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.serializers import ModelSerializer
 
+from foodcartapp.utils import get_or_create_location
+
 from .models import Order, OrderItem, Product
 
 
@@ -147,6 +149,9 @@ def register_order(request):
             phone_number=validated["phone_number"],
             client_address=validated["client_address"],
         )
+
+        order.location = get_or_create_location(order.client_address)
+        order.save(update_fields=["location"])
 
         for item in validated["items"]:
             OrderItem.objects.create(
