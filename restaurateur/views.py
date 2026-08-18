@@ -6,6 +6,7 @@ from django.db.models import Case, IntegerField, Value, When
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
+from geopy.distance import geodesic
 
 from foodcartapp.models import Order, Product, Restaurant
 from foodcartapp.utils import get_restaurants_for_order
@@ -109,7 +110,7 @@ def view_orders(request):
 
     order_items = (
         Order.objects.active()
-        .select_related("restaurant")
+        .select_related("restaurant", "location")
         .with_total_cost()
         .annotate(
             is_new=Case(
@@ -122,10 +123,32 @@ def view_orders(request):
         .prefetch_related("items__product")
     )
     for order in order_items:
+        client_coords = None
+        if order.location and order.location.lat and order.location.lon:
+            client_coords = (order.location.lat, order.location.lon)
+
         if order.restaurant:
-            order.available_restaurants = [order.restaurant]
-        else:
-            order.available_restaurants = get_restaurants_for_order(order)
+            order.available_restaurants = [(order.restaurant, None)]
+            continue
+
+        restaurants = get_restaurants_for_order(order)
+        restaurants_with_dist = []
+
+        for restaurant in restaurants:
+            dist = None
+            if (
+                client_coords
+                and restaurant.location
+                and restaurant.location.lat
+                and restaurant.location.lon
+            ):
+                rest_coords = (restaurant.location.lat, restaurant.location.lon)
+                dist = round(geodesic(client_coords, rest_coords).km, 1)
+            restaurants_with_dist.append((restaurant, dist))
+
+        restaurants_with_dist.sort(key=lambda item: (item[1] is None, item[1]))
+        order.available_restaurants = restaurants_with_dist
+
     return render(
         request,
         template_name="order_items.html",
