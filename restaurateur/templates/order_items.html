@@ -29,7 +29,11 @@
     {% for item in order_items %}
       <tr>
         <td>{{ item.id }}</td>        
-        <td>{{ item.get_status_display }}</td>
+        <td>{{ item.get_status_display }}
+          {% if item.status == 'new' %}
+            <span class="badge bg-success ms-1">НОВЫЙ</span>
+          {% endif %}
+        </td>
         <td>{{ item.get_payment_method_display }}</td>
         <td>{{ item.created_at|time:"H:i" }}</td>
         <td>{{ item.total_cost }}</td>
