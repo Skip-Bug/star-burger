@@ -109,6 +109,7 @@ def view_orders(request):
 
     order_items = (
         Order.objects.active()
+        .select_related("restaurant")
         .with_total_cost()
         .annotate(
             is_new=Case(
