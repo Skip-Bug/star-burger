@@ -17,24 +17,6 @@ from .models import (
 from .utils import get_restaurants_for_order
 
 
-class LocationAdminMixin:
-    """Миксин для отображения координат из связанной модели Location."""
-
-    def get_lat(self, obj):
-        return (
-            obj.location.lat if obj.location and obj.location.lat is not None else None
-        )
-
-    get_lat.short_description = "Широта"
-
-    def get_lon(self, obj):
-        return (
-            obj.location.lon if obj.location and obj.location.lon is not None else None
-        )
-
-    get_lon.short_description = "Долгота"
-
-
 class OrderForm(forms.ModelForm):
     class Meta:
         model = Order
@@ -55,29 +37,7 @@ class RestaurantMenuItemInline(admin.TabularInline):
 
 
 @admin.register(Restaurant)
-class RestaurantAdmin(LocationAdminMixin, admin.ModelAdmin):
-    readonly_fields = ("get_lat", "get_lon")
-    fieldsets = (
-        (
-            "Общее",
-            {
-                "fields": [
-                    "name",
-                    "address",
-                    "contact_phone",
-                ]
-            },
-        ),
-        (
-            "Координаты",
-            {
-                "fields": [
-                    "get_lat",
-                    "get_lon",
-                ]
-            },
-        ),
-    )
+class RestaurantAdmin(admin.ModelAdmin):
     search_fields = (
         "name",
         "address",
@@ -178,10 +138,10 @@ class OrderItemsInline(admin.TabularInline):
 
 
 @admin.register(Order)
-class OrderAdmin(LocationAdminMixin, admin.ModelAdmin):
+class OrderAdmin(admin.ModelAdmin):
     form = OrderForm
     inlines = [OrderItemsInline]  # noqa: RUF012
-    readonly_fields = ("get_lat", "get_lon", "created_at")
+    readonly_fields = ("created_at",)
     fieldsets = (
         (
             "Клиент",
@@ -191,15 +151,6 @@ class OrderAdmin(LocationAdminMixin, admin.ModelAdmin):
                     "client_last_name",
                     "phone_number",
                     "client_address",
-                )
-            },
-        ),
-        (
-            "Координаты",
-            {
-                "fields": (
-                    "get_lat",
-                    "get_lon",
                 )
             },
         ),
