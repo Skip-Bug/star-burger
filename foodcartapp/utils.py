@@ -1,47 +1,6 @@
-import requests
-from django.conf import settings
 from django.db.models import Count
 
 from foodcartapp.models import Restaurant, RestaurantMenuItem
-from location.models import Location
-
-
-def fetch_coordinates(apikey, address):
-    base_url = "https://geocode-maps.yandex.ru/1.x"
-    response = requests.get(
-        base_url,
-        params={
-            "geocode": address,
-            "apikey": apikey,
-            "format": "json",
-        },
-    )
-    response.raise_for_status()
-    found_places = response.json()["response"]["GeoObjectCollection"]["featureMember"]
-
-    if not found_places:
-        return None
-
-    most_relevant = found_places[0]
-    lon, lat = most_relevant["GeoObject"]["Point"]["pos"].split(" ")
-    return lon, lat
-
-
-def get_or_create_location(address):
-
-    location, created = Location.objects.get_or_create(address=address)
-
-    if created or location.lat is None or location.lon is None:
-        coords = fetch_coordinates(settings.YANDEX_API_KEY, address)
-        if coords:
-            lon, lat = coords
-            location.lat = float(lat)
-            location.lon = float(lon)
-            location.save(update_fields=["lat", "lon"])
-        else:
-            pass
-
-    return location
 
 
 def get_restaurants_for_order(order):
@@ -61,4 +20,4 @@ def get_restaurants_for_order(order):
         .values_list("restaurant_id", flat=True)
     )
 
-    return Restaurant.objects.filter(id__in=restaurant_ids).select_related("location")
+    return Restaurant.objects.filter(id__in=restaurant_ids)
