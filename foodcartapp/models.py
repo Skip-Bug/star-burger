@@ -20,23 +20,6 @@ class OrderQuerySet(models.QuerySet):
         return self.annotate(total_cost=total_cost)
 
 
-class Location(models.Model):
-    address = models.CharField(
-        "Адрес",
-        max_length=255,
-        unique=True,
-    )
-    lat = models.FloatField("Широта", blank=True, null=True)
-    lon = models.FloatField("Долгота", blank=True, null=True)
-
-    class Meta:
-        verbose_name = "Локация"
-        verbose_name_plural = "Локации"
-
-    def __str__(self):
-        return self.address
-
-
 class Restaurant(models.Model):
     name = models.CharField(
         "название",
@@ -46,14 +29,6 @@ class Restaurant(models.Model):
         "адрес",
         max_length=100,
         blank=True,
-    )
-    location = models.ForeignKey(
-        "Location",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="restaurants",
-        verbose_name="Координаты ресторана",
     )
     contact_phone = models.CharField(
         "контактный телефон",
@@ -206,14 +181,6 @@ class Order(models.Model):
         "Адрес клиента",
         max_length=200,
         db_index=True,
-    )
-    location = models.ForeignKey(
-        "Location",
-        on_delete=models.SET_NULL,
-        null=True,
-        blank=True,
-        related_name="orders",
-        verbose_name="Координаты клиента",
     )
 
     created_at = models.DateTimeField(

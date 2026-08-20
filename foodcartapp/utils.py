@@ -2,7 +2,8 @@ import requests
 from django.conf import settings
 from django.db.models import Count
 
-from foodcartapp.models import Location, Restaurant, RestaurantMenuItem
+from foodcartapp.models import Restaurant, RestaurantMenuItem
+from location.models import Location
 
 
 def fetch_coordinates(apikey, address):
