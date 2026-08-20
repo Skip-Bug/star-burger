@@ -230,6 +230,7 @@ class OrderItem(models.Model):
         Product,
         on_delete=models.PROTECT,
         verbose_name="Продукт",
+        related_name="order_items",
     )
 
     quantity = models.PositiveIntegerField(
