@@ -223,6 +223,7 @@ class OrderItem(models.Model):
     order = models.ForeignKey(
         Order,
         on_delete=models.CASCADE,
+        verbose_name="Заказ",
         related_name="items",
     )
     product = models.ForeignKey(
@@ -231,7 +232,9 @@ class OrderItem(models.Model):
         verbose_name="Продукт",
     )
 
-    quantity = models.PositiveIntegerField(validators=[MinValueValidator(1)])
+    quantity = models.PositiveIntegerField(
+        "Количество", validators=[MinValueValidator(1)]
+    )
 
     price = models.DecimalField(
         "цена в заказе",
