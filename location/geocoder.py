@@ -4,6 +4,25 @@ from django.conf import settings
 from .models import Location
 
 
+def get_coordinates_for_addresses(addresses):
+    addresses = set(addresses)
+    existing = {
+        loc.address: loc for loc in Location.objects.filter(address__in=addresses)
+    }
+    result = {}
+    for address in addresses:
+        loc = existing.get(address)
+        if loc and loc.lat is not None and loc.lon is not None:
+            result[address] = (loc.lat, loc.lon)
+        else:
+            loc = get_or_create_location(address)
+            if loc and loc.lat is not None and loc.lon is not None:
+                result[address] = (loc.lat, loc.lon)
+            else:
+                result[address] = None
+    return result
+
+
 def fetch_coordinates(apikey, address):
     base_url = "https://geocode-maps.yandex.ru/1.x"
     response = requests.get(
