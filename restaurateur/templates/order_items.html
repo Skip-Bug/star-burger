@@ -44,6 +44,8 @@
         <td>
           {% if item.restaurant %}
             <strong>{{ item.restaurant.name }}</strong>
+          {% elif item.client_coords_not_found %}
+            <span class="text-danger">Адрес не найден</span>
           {% elif item.available_restaurants %}
             <details>
               <summary>Доступные рестораны</summary>

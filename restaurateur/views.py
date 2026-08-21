@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from django import forms
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
@@ -8,10 +10,8 @@ from django.urls import reverse_lazy
 from django.views import View
 from geopy.distance import geodesic
 
-from foodcartapp.models import Order, Product, Restaurant
-from foodcartapp.utils import get_restaurants_for_order
-from location.geocoder import get_or_create_location
-from location.models import Location
+from foodcartapp.models import Order, Product, Restaurant, RestaurantMenuItem
+from location.geocoder import get_coordinates_for_addresses
 
 
 class Login(forms.Form):
@@ -73,7 +73,9 @@ def is_manager(user):
 @user_passes_test(is_manager, login_url="restaurateur:login")
 def view_products(request):
     restaurants = list(Restaurant.objects.order_by("name"))
-    products = list(Product.objects.prefetch_related("menu_items"))
+    products = list(
+        Product.objects.prefetch_related("menu_items").select_related("category")
+    )
 
     products_with_restaurant_availability = []
     for product in products:
@@ -124,43 +126,62 @@ def view_orders(request):
         .prefetch_related("items__product")
     )
 
+    if not order_items:
+        return render(request, "order_items.html", {"order_items": []})
+
+    order_products_map = {}
+    all_product_ids = set()
+    for order in order_items:
+        product_ids = {item.product_id for item in order.items.all()}
+        order_products_map[order.id] = product_ids
+        all_product_ids.update(product_ids)
+
+    menu_items = RestaurantMenuItem.objects.filter(
+        product_id__in=all_product_ids, availability=True
+    ).select_related("restaurant")
+
+    restaurant_products = defaultdict(set)
+    restaurants_map = {}
+    for menu_item in menu_items:
+        rest = menu_item.restaurant
+        restaurant_products[rest.id].add(menu_item.product_id)
+        restaurants_map[rest.id] = rest
+
     addresses = set()
     for order in order_items:
         addresses.add(order.client_address)
-        for restaurant in get_restaurants_for_order(order):
-            addresses.add(restaurant.address)
-
-    location_dict = {
-        loc.address: loc for loc in Location.objects.filter(address__in=addresses)
-    }
-
-    for address in addresses:
-        loc = location_dict.get(address)
-        if loc is None or loc.lat is None or loc.lon is None:
-            updated_loc = get_or_create_location(address)
-            location_dict[address] = updated_loc
-
-    for order in order_items:
-        client_loc = location_dict.get(order.client_address)
-        client_coords = (
-            (client_loc.lat, client_loc.lon)
-            if client_loc and client_loc.lat and client_loc.lon
-            else None
-        )
 
         if order.restaurant:
             order.available_restaurants = [(order.restaurant, None)]
+            addresses.add(order.restaurant.address)
             continue
 
-        restaurants = get_restaurants_for_order(order)
+        order_product_ids = order_products_map[order.id]
+        suitable = []
+        for rest_id, rest_products in restaurant_products.items():
+            if rest_products.issuperset(order_product_ids):
+                suitable.append(restaurants_map[rest_id])
+                addresses.add(restaurants_map[rest_id].address)
+
+        order.available_restaurants = [(rest, None) for rest in suitable]
+
+    coordinates = get_coordinates_for_addresses(addresses)
+
+    for order in order_items:
+        if order.restaurant:
+            continue
+
+        client_coords = coordinates.get(order.client_address)
+        order.client_coords_not_found = client_coords is None
+        
         restaurants_with_dist = []
-        for restaurant in restaurants:
+        for restaurant, _ in order.available_restaurants:
             dist = None
-            rest_loc = location_dict.get(restaurant.address)
-            if client_coords and rest_loc and rest_loc.lat and rest_loc.lon:
-                rest_coords = (rest_loc.lat, rest_loc.lon)
+            rest_coords = coordinates.get(restaurant.address)
+            if client_coords and rest_coords:
                 dist = round(geodesic(client_coords, rest_coords).km, 1)
             restaurants_with_dist.append((restaurant, dist))
+
         restaurants_with_dist.sort(key=lambda item: (item[1] is None, item[1]))
         order.available_restaurants = restaurants_with_dist
 
