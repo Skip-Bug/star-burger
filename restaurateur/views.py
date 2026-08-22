@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from django import forms
 from django.contrib.auth import authenticate, login
 from django.contrib.auth import views as auth_views
@@ -8,10 +6,16 @@ from django.db.models import Case, IntegerField, Value, When
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
 from django.views import View
-from geopy.distance import geodesic
 
-from foodcartapp.models import Order, Product, Restaurant, RestaurantMenuItem
+from foodcartapp.models import Order, Product, Restaurant
 from location.geocoder import get_coordinates_for_addresses
+from restaurateur.utils import (
+    collect_addresses,
+    compute_distances_for_orders,
+    find_suitable_restaurants,
+    get_order_products_map,
+    get_restaurant_products_map,
+)
 
 
 class Login(forms.Form):
@@ -129,61 +133,22 @@ def view_orders(request):
     if not order_items:
         return render(request, "order_items.html", {"order_items": []})
 
-    order_products_map = {}
-    all_product_ids = set()
-    for order in order_items:
-        product_ids = {item.product_id for item in order.items.all()}
-        order_products_map[order.id] = product_ids
-        all_product_ids.update(product_ids)
+    order_products_map, all_product_ids = get_order_products_map(order_items)
 
-    menu_items = RestaurantMenuItem.objects.filter(
-        product_id__in=all_product_ids, availability=True
-    ).select_related("restaurant")
+    restaurant_products, restaurants_map = get_restaurant_products_map(all_product_ids)
 
-    restaurant_products = defaultdict(set)
-    restaurants_map = {}
-    for menu_item in menu_items:
-        rest = menu_item.restaurant
-        restaurant_products[rest.id].add(menu_item.product_id)
-        restaurants_map[rest.id] = rest
+    suitable_by_order = find_suitable_restaurants(
+        order_items,
+        order_products_map,
+        restaurant_products,
+        restaurants_map,
+    )
 
-    addresses = set()
-    for order in order_items:
-        addresses.add(order.client_address)
-
-        if order.restaurant:
-            order.available_restaurants = [(order.restaurant, None)]
-            addresses.add(order.restaurant.address)
-            continue
-
-        order_product_ids = order_products_map[order.id]
-        suitable = []
-        for rest_id, rest_products in restaurant_products.items():
-            if rest_products.issuperset(order_product_ids):
-                suitable.append(restaurants_map[rest_id])
-                addresses.add(restaurants_map[rest_id].address)
-
-        order.available_restaurants = [(rest, None) for rest in suitable]
+    addresses = collect_addresses(order_items, suitable_by_order)
 
     coordinates = get_coordinates_for_addresses(addresses)
 
-    for order in order_items:
-        if order.restaurant:
-            continue
-
-        client_coords = coordinates.get(order.client_address)
-        order.client_coords_not_found = client_coords is None
-        
-        restaurants_with_dist = []
-        for restaurant, _ in order.available_restaurants:
-            dist = None
-            rest_coords = coordinates.get(restaurant.address)
-            if client_coords and rest_coords:
-                dist = round(geodesic(client_coords, rest_coords).km, 1)
-            restaurants_with_dist.append((restaurant, dist))
-
-        restaurants_with_dist.sort(key=lambda item: (item[1] is None, item[1]))
-        order.available_restaurants = restaurants_with_dist
+    compute_distances_for_orders(order_items, coordinates, suitable_by_order)
 
     return render(
         request,
