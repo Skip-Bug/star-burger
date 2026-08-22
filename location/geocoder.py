@@ -9,17 +9,37 @@ def get_coordinates_for_addresses(addresses):
     existing = {
         loc.address: loc for loc in Location.objects.filter(address__in=addresses)
     }
+
     result = {}
+    locations_to_create = []
+
     for address in addresses:
         loc = existing.get(address)
         if loc and loc.lat is not None and loc.lon is not None:
             result[address] = (loc.lat, loc.lon)
-        else:
-            loc = get_or_create_location(address)
-            if loc and loc.lat is not None and loc.lon is not None:
-                result[address] = (loc.lat, loc.lon)
+            continue
+
+        coords = fetch_coordinates(settings.YANDEX_API_KEY, address)
+        if coords:
+            lon, lat = coords
+            result[address] = (float(lat), float(lon))
+            if loc:
+                loc.lon = float(lon)
+                loc.save(update_fields=['lat', 'lon'])
             else:
-                result[address] = None
+                locations_to_create.append(
+                    Location(address=address, lat=float(lat), lon=float(lon))
+                )
+        else:
+            result[address] = None
+            if not loc:
+                locations_to_create.append(
+                    Location(address=address, lat=None, lon=None)
+                )
+
+    if locations_to_create:
+        Location.objects.bulk_create(locations_to_create)
+
     return result
 
 
