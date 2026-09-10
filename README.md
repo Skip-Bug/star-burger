@@ -64,10 +64,12 @@ pip install -r requirements.txt
 ```sh
 SECRET_KEY=django-insecure-0if40nf4nf93n4
 YANDEX_API_KEY=ключ доступа к Yandex Geocoder API.
+ROLLBAR_ACCESS_TOKEN='ваш_токен' # если хотите подключить ROLLBAR
+ROLLBAR_ENVIRONMENT='development' # production или development
 ```
 
-Получить можно на https://developer.tech.yandex.ru/.
-
+YANDEX_API_KEY Получить можно на https://developer.tech.yandex.ru/.  
+ROLLBAR_ACCESS_TOKEN Получить его можно на https://rollbar.com/.  
 Создайте файл базы данных SQLite и отмигрируйте её следующей командой:
 
 ```sh
