@@ -1,7 +1,10 @@
 import os
 
 import dj_database_url
+import rollbar  # noqa
 from environs import Env
+
+from star_burger.utils import get_current_git_branch
 
 env = Env()
 env.read_env()
@@ -14,6 +17,18 @@ SECRET_KEY = env("SECRET_KEY")
 DEBUG = env.bool("DEBUG", True)
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", ["127.0.0.1", "localhost"])
+
+ROLLBAR = {
+    "access_token": env.str("ROLLBAR_ACCESS_TOKEN", default=None),
+    "environment": env.str("ROLLBAR_ENVIRONMENT", default="development"),
+    "branch": get_current_git_branch() or "unknown",
+    "root": BASE_DIR,
+}
+
+
+REST_FRAMEWORK = {
+    "EXCEPTION_HANDLER": "rollbar.contrib.django_rest_framework.post_exception_handler"
+}
 
 INSTALLED_APPS = [
     "foodcartapp.apps.FoodcartappConfig",
@@ -39,6 +54,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
     "debug_toolbar.middleware.DebugToolbarMiddleware",
+    "rollbar.contrib.django.middleware.RollbarNotifierMiddleware",
 ]
 
 ROOT_URLCONF = "star_burger.urls"
