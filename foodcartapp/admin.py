@@ -59,6 +59,7 @@ class ProductAdmin(admin.ModelAdmin):
         "category",
         "price",
     )
+    list_select_related = ("category",)
     list_display_links = ("name",)
     list_filter = ("category",)
     search_fields = (
@@ -97,7 +98,7 @@ class ProductAdmin(admin.ModelAdmin):
     readonly_fields = ("get_image_preview",)
 
     class Media:
-        css = {"all": (static("admin/foodcartapp.css"))}  # noqa: RUF012
+        css = {"all": (static("admin/foodcartapp.css"),)}  # noqa: RUF012
 
     def get_image_preview(self, obj):
         if not obj.image:
