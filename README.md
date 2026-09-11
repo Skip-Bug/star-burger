@@ -58,6 +58,20 @@ python -m venv venv
 ```sh
 pip install -r requirements.txt
 ```
+## База данных
+
+Проект использует PostgreSQL. SQLite оставлен как fallback для быстрой отладки,   
+но в продакшене и при разработке используется Postgres.
+
+### Локальный запуск с PostgreSQL
+
+Установите PostgreSQL и создайте базу данных и пользователя:
+
+```sql
+CREATE DATABASE star_burger;
+CREATE USER <ваш_пользователь> WITH PASSWORD 'ваш_пароль';
+GRANT ALL PRIVILEGES ON DATABASE star_burger TO <ваш_пользователь>;
+```
 
 Определите переменную окружения `SECRET_KEY`. Создать файл `.env` в каталоге `star_burger/` и положите туда такой код:
 
@@ -66,6 +80,7 @@ SECRET_KEY=django-insecure-0if40nf4nf93n4
 YANDEX_API_KEY=ключ доступа к Yandex Geocoder API.
 ROLLBAR_ACCESS_TOKEN='ваш_токен' # если хотите подключить ROLLBAR
 ROLLBAR_ENVIRONMENT='development' # production или development
+DATABASE_URL=postgres://star_burger_user:your_password@localhost:5432/star_burger #для использования PostgreSQL 
 ```
 
 YANDEX_API_KEY Получить можно на https://developer.tech.yandex.ru/.  
