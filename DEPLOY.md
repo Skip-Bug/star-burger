@@ -342,8 +342,10 @@ python manage.py runserver
 Для продакшена желательно купить домен — так сайт будет выглядеть профессиональнее,
 а Let's Encrypt сможет выдать сертификат.
 [бесплатно можно тут](https://localhost.cc/)
-В DNS прописать ip-адрес сервера
-<img width="411" height="501" alt="Screenshot 2026-09-13 221748" src="https://github.com/user-attachments/assets/e5c73ab1-72b6-4181-a9a9-e178f487c407" />
+
+В DNS нужно добавить A-запись, указывающую на IP-адрес вашего сервера:
+
+![Добавление DNS-записи: тип A, поддомен, IP сервера](assets/dns-record.png)
 
 ### Указать домен в настройках
 
