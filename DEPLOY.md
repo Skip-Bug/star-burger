@@ -251,7 +251,7 @@ pip install -r requirements.txt
 echo "Устанавливаем Node.js-зависимости"
 npm install --silent
 echo "Пересобираем JS"
-npm run build
+./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
 echo "Применяем миграции"
 python manage.py migrate --noinput
 echo "Собираем статику"
