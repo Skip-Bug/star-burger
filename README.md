@@ -58,9 +58,10 @@ python -m venv venv
 ```sh
 pip install -r requirements.txt
 ```
+
 ## База данных
 
-Проект использует PostgreSQL. SQLite оставлен как fallback для быстрой отладки,   
+Проект использует PostgreSQL. SQLite оставлен как fallback для быстрой отладки,
 но в продакшене и при разработке используется Postgres.
 
 ### Локальный запуск с PostgreSQL
@@ -69,26 +70,44 @@ pip install -r requirements.txt
 
 ```sql
 CREATE DATABASE star_burger;
-CREATE USER <ваш_пользователь> WITH PASSWORD 'ваш_пароль';
-GRANT ALL PRIVILEGES ON DATABASE star_burger TO <ваш_пользователь>;
+CREATE USER star_burger_user WITH PASSWORD 'ваш_пароль';
+GRANT ALL PRIVILEGES ON DATABASE star_burger TO star_burger_user;
+ALTER DATABASE star_burger OWNER TO star_burger_user;
 ```
 
-Определите переменную окружения `SECRET_KEY`. Создать файл `.env` в каталоге `star_burger/` и положите туда такой код:
+#### Быстрый fallback на SQLite
+
+Если не хотите поднимать Postgres для отладки, не указывайте `DATABASE_URL`
+в `.env` — проект откатится на SQLite.
+
+### Файл `.env`
+
+Создайте файл `.env` в корне проекта (рядом с `manage.py`). Пример для локальной разработки:
 
 ```sh
 SECRET_KEY=django-insecure-0if40nf4nf93n4
-YANDEX_API_KEY=ключ доступа к Yandex Geocoder API.
+YANDEX_API_KEY=ключ доступа к Yandex Geocoder API
 ROLLBAR_ACCESS_TOKEN='ваш_токен' # если хотите подключить ROLLBAR
-ROLLBAR_ENVIRONMENT='development' # production или development
-DATABASE_URL=postgres://star_burger_user:your_password@localhost:5432/star_burger #для использования PostgreSQL 
+ROLLBAR_ENVIRONMENT=development # production или development
+DATABASE_URL=postgres://star_burger_user:ваш_пароль@localhost:5432/star_burger
+DEBUG=True
+ALLOWED_HOSTS=127.0.0.1,localhost
 ```
 
-YANDEX_API_KEY Получить можно на https://developer.tech.yandex.ru/.  
-ROLLBAR_ACCESS_TOKEN Получить его можно на https://rollbar.com/.  
-Создайте файл базы данных SQLite и отмигрируйте её следующей командой:
+- `YANDEX_API_KEY` можно получить на https://developer.tech.yandex.ru/.
+- `ROLLBAR_ACCESS_TOKEN` можно получить на https://rollbar.com/.
+- Файл `.env` **не коммитится** в Git.
+
+Примените миграции:
 
 ```sh
 python manage.py migrate
+```
+
+(Опционально) создайте суперпользователя для доступа в админку:
+
+```sh
+python manage.py createsuperuser
 ```
 
 Запустите сервер:
@@ -161,17 +180,10 @@ Parcel будет следить за файлами в каталоге `bundle
 
 ## Как запустить prod-версию сайта
 
-Собрать фронтенд:
+Инструкция по развёртыванию на сервере (production), настройке PostgreSQL,
+systemd, Nginx, `.env` для прода и обновлению проекта находится в отдельном файле:
 
-```sh
-./node_modules/.bin/parcel build bundles-src/index.js --dist-dir bundles --public-url="./"
-```
-
-Настроить бэкенд: создать файл `.env` в каталоге `star_burger/` со следующими настройками:
-
-- `DEBUG` — дебаг-режим. Поставьте `False`.
-- `SECRET_KEY` — секретный ключ проекта. Он отвечает за шифрование на сайте. Например, им зашифрованы все пароли на вашем сайте.
-- `ALLOWED_HOSTS` — [см. документацию Django](https://docs.djangoproject.com/en/5.2/ref/settings/#allowed-hosts)
+- [DEPLOY.md](DEPLOY.md)
 
 ## Цели проекта
 
