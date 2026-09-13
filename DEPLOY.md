@@ -343,7 +343,7 @@ python manage.py runserver
 а Let's Encrypt сможет выдать сертификат.
 [бесплатно можно тут](https://localhost.cc/)
 В DNS прописать ip-адрес сервера
-#TO DO скриншот
+<img width="411" height="501" alt="Screenshot 2026-09-13 221748" src="https://github.com/user-attachments/assets/e5c73ab1-72b6-4181-a9a9-e178f487c407" />
 
 ### Указать домен в настройках
 
