@@ -1,5 +1,9 @@
 # Сайт доставки еды Star Burger
 
+[![GitVers Репозиторий](https://img.shields.io/badge/Репозиторий-GitVers-blue?logo=github)](https://gitverse.ru/Skrip/star-burger)
+[![Лицензия MIT](https://img.shields.io/badge/Лицензия-MIT-blue.svg)](LICENSE)
+[![Демо сайта](https://img.shields.io/badge/Демо-сайт-brightgreen)](https://skip-project.githubpage.com/)
+
 Это сайт сети ресторанов Star Burger. Здесь можно заказать превосходные бургеры с доставкой на дом.
 
 ![скриншот сайта](https://dvmn.org/filer/canonical/1594651635/686/)
