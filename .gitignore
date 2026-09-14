@@ -144,3 +144,5 @@ cython_debug/
 .parcel-cache/
 db.sqlite3.bak
 
+staticfiles/
+bundles/
