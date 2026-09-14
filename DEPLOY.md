@@ -236,7 +236,9 @@ systemctl restart star-burger
 nano deploy.sh
 ```
 
-```
+Скопируйте туда:
+
+````
 #!/bin/bash
 set -euo pipefail
 cd /opt/star-burger
@@ -246,7 +248,7 @@ git fetch
 git merge origin/master --no-edit
 echo "Активируем виртуальное окружение"
 source venv/bin/activate
-echo "Устанавливаем Python-зависимости"
+echo "Устанавливаем зависимости"
 pip install -r requirements.txt
 echo "Устанавливаем Node.js-зависимости"
 npm install --silent
@@ -258,13 +260,30 @@ echo "Собираем статику"
 python manage.py collectstatic --noinput
 echo "Перезапускаем сервис"
 systemctl restart star-burger
+echo "Сообщаем Rollbar о деплое"
+COMMIT_HASH=$(git rev-parse origin/master)
+ACCESS_TOKEN=$(grep -E '^ROLLBAR_ACCESS_TOKEN=' .env | cut -d= -f2- | tr -d "'\"")
+ROLLBAR_ENV=$(grep -E '^ROLLBAR_ENVIRONMENT=' .env | cut -d= -f2- | tr -d "'\"")
+AUTHOR=$(git log -1 --pretty=format:'%an' origin/master)
+COMMENT=$(git log -1 --pretty=format:'%s' origin/master)
+curl -sS -X POST https://api.rollbar.com/api/1/deploy/ \
+  -H "Content-Type: application/json" \
+  -d "{
+    \"access_token\": \"$ACCESS_TOKEN\",
+    \"environment\": \"$ROLLBAR_ENV\",
+    \"revision\": \"$COMMIT_HASH\",
+    \"local_username\": \"$AUTHOR\",
+    \"comment\": \"$COMMENT\"
+  }" || true
+echo ""
 echo "Готово!"
-```
+
 
 ```bash
 chmod u+x deploy.sh # Сделать скрипт исполняемым
+
 ./deploy.sh # запуск скрипта
-```
+````
 
 Скрипт:
 
@@ -274,6 +293,7 @@ chmod u+x deploy.sh # Сделать скрипт исполняемым
 4. Применяет миграции.
 5. Собирает статику.
 6. Перезапускает Gunicorn.
+7. Сообщает Rollbar о деплое
 
 ---
 
