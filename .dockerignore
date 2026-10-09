@@ -16,3 +16,9 @@ bundles-src/
 package.json
 package-lock.json
 .parcel-cache/
+
+nginx/
+Dockerfile
+docker-compose.yml
+docker-compose.*.yml
+.dockerignore
