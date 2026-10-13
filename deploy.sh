@@ -21,11 +21,11 @@ docker run --rm -v "$(pwd)/staticfiles:/out" star-burger-web \
     sh -c "cp -r /app/staticfiles/. /out/"
 
 echo "=== 6. Применяем миграции ==="
-docker compose -f docker-compose.yml -f docker-compose.prod.yml \
+docker compose -f docker-compose.prod.yml \
     run --rm web python manage.py migrate --noinput
 
 echo "=== 7. Запускаем контейнеры ==="
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+docker compose -f docker-compose.prod.yml up -d
 
 echo "=== 8. Сообщаем Rollbar ==="
 COMMIT_HASH=$(git rev-parse HEAD)
