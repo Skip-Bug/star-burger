@@ -1,5 +1,12 @@
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: star-burger-frontend
+    profiles: ["build"]
+
   web:
     ports:
-      - "127.0.0.1:8000:8000"   
+      - "127.0.0.1:8000:8000"
     restart: always
