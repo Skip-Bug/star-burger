@@ -26,16 +26,6 @@ services:
       db:
         condition: service_healthy
 
-  nginx:
-    build: ./nginx
-    ports:
-      - "80:80"
-    volumes:
-      - static_data:/static
-      - ./media:/media
-    depends_on:
-      - web
-
 volumes:
   static_data:
   postgres_data:
