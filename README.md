@@ -1,12 +1,12 @@
 # Сайт доставки еды Star Burger
 
-[![GitVers Репозиторий](https://img.shields.io/badge/Репозиторий-GitVers-blue?logo=github)](https://gitverse.ru/Skrip/star-burger)
+[![Репозиторий GitHub](https://img.shields.io/badge/Репозиторий-GitHub-blue?logo=github)](https://github.com/Skip-Bug/star-burger)
+[![Зеркало на GitVers](https://img.shields.io/badge/Зеркало-GitVers-orange)](https://gitverse.ru/Skrip/star-burger)
 [![Лицензия MIT](https://img.shields.io/badge/Лицензия-MIT-blue.svg)](LICENSE)
 [![Демо сайта](https://img.shields.io/badge/Демо-сайт-brightgreen)](https://skip-project.githubpage.com/)
 
 Это сайт сети ресторанов Star Burger. Здесь можно заказать превосходные бургеры с доставкой на дом.
 <img style="max-width:50%; height:auto;" alt="Screenshot 2026-10-10 010603" src="https://github.com/user-attachments/assets/cb3c0911-e78a-4e9d-8fa1-6a6b9e88b013" />
-
 
 Сеть Star Burger объединяет несколько ресторанов, действующих под единой франшизой. У всех ресторанов одинаковое меню и одинаковые цены. Просто выберите блюдо из меню на сайте и укажите место доставки. Мы сами найдём ближайший к вам ресторан, всё приготовим и привезём.
 
@@ -18,14 +18,16 @@
 
 ## Как запустить dev-версию сайта
 
-Для запуска сайта нужно запустить **одновременно** бэкенд и фронтенд, в двух терминалах.
+Проект докеризован: бэкенд и фронтенд собираются в отдельные образы, база
+поднимается Docker Compose. Это основной способ запуска.
 
-### Как собрать бэкенд
+[Установите Docker](https://docs.docker.com/get-docker/) и Docker Compose, если
+этого ещё не сделали.
 
-Скачайте код:
+Скачайте код (основной репозиторий — GitHub):
 
 ```sh
-git clone https://github.com/devmanorg/star-burger.git
+git clone https://github.com/Skip-Bug/star-burger.git
 ```
 
 Перейдите в каталог проекта:
@@ -33,6 +35,77 @@ git clone https://github.com/devmanorg/star-burger.git
 ```sh
 cd star-burger
 ```
+
+Скопируйте шаблон окружения в `.env` в корне проекта (рядом с `manage.py`):
+
+```sh
+cp .env.example .env
+# Windows: copy .env.example .env
+```
+
+Для запуска через Docker в `.env` должны быть такие значения:
+
+```sh
+SECRET_KEY=django-insecure-0if40nf4nf93n4
+YANDEX_API_KEY=ключ доступа к Yandex Geocoder API
+DATABASE_URL=postgres://star_burger_user:ваш_пароль@db:5432/star_burger
+DEBUG=True
+ALLOWED_HOSTS=127.0.0.1,localhost
+POSTGRES_DB=star_burger
+POSTGRES_USER=star_burger_user
+POSTGRES_PASSWORD=ваш_пароль
+```
+
+- `DATABASE_URL` указывает на сервис `db`: внутри сети Compose база доступна по имени сервиса, а не по `localhost`.
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` читает Docker Compose, когда создаёт базу. Значения должны совпадать с `DATABASE_URL`.
+- `YANDEX_API_KEY` можно получить на https://developer.tech.yandex.ru/.
+- Файл `.env` **не коммитится** в Git.
+
+Запустите все сервисы:
+
+```sh
+docker compose --profile dev up
+```
+
+Поднимутся четыре контейнера: `db` (PostgreSQL), `web` (Django runserver),
+`frontend` (Parcel watch) и `nginx` (реверс-прокси на `web`).
+
+В другом терминале примените миграции и создайте суперпользователя:
+
+```sh
+docker compose exec web python manage.py migrate
+docker compose exec web python manage.py createsuperuser
+```
+
+Откройте сайт в браузере по адресу [http://localhost/](http://localhost/).
+Админка — [http://localhost/admin/](http://localhost/admin/), интерфейс
+менеджера — [http://localhost/manager/](http://localhost/manager/).
+
+Остановить стек:
+
+```sh
+docker compose --profile dev down
+```
+
+Данные базы и `media/` лежат в docker volumes, поэтому переживают остановку и
+пересоздание контейнеров. Не добавляйте к `down` флаг `-v` — он удалит вместе с
+томами и базу данных.
+
+Полезные команды:
+
+```sh
+docker compose --profile dev up -d              # запуск в фоне
+docker compose --profile dev logs -f web        # логи Django
+docker compose exec web python manage.py shell  # консоль Django
+docker compose --profile dev build              # пересобрать образы
+```
+
+## Как запустить dev-версию без Docker
+
+Тот же стек можно собрать вручную, без Docker. Понадобится одновременно запускать
+бэкенд и фронтенд в двух терминалах.
+
+### Как собрать бэкенд
 
 [Установите Python](https://www.python.org/), если этого ещё не сделали.
 
@@ -63,14 +136,10 @@ python -m venv venv
 pip install -r requirements.txt
 ```
 
-## База данных
+### База данных
 
-Проект использует PostgreSQL. SQLite оставлен как fallback для быстрой отладки,
-но в продакшене и при разработке используется Postgres.
-
-### Локальный запуск с PostgreSQL
-
-Установите PostgreSQL и создайте базу данных и пользователя:
+В этом режиме база не поднимается автоматически — PostgreSQL нужно установить
+самостоятельно и создать базу данных и пользователя:
 
 ```sql
 CREATE DATABASE star_burger;
@@ -86,7 +155,8 @@ ALTER DATABASE star_burger OWNER TO star_burger_user;
 
 ### Файл `.env`
 
-Создайте файл `.env` в корне проекта (рядом с `manage.py`). Пример для локальной разработки:
+В отличие от Docker-режима, здесь база живёт на хосте, поэтому в `DATABASE_URL`
+указан `localhost`, и переменные `POSTGRES_*` не нужны:
 
 ```sh
 SECRET_KEY=django-insecure-0if40nf4nf93n4
@@ -141,13 +211,13 @@ npm --version
 # 8.11.0
 ```
 
-Версия `nodejs` должна быть не младше `10.0` и не старше `16.16`. Лучше ставьте `16.16.0`, её мы тестировали. Версия `npm` не важна. Как обновить Node.js читайте в статье: [How to Update Node.js](https://phoenixnap.com/kb/update-node-js-version).
+Версия `nodejs` должна быть не младше `10.0` и не старше `16.16`. Лучше ставьте `16.16.0`, её мы тестировали. Версия `npm` не важна. На macOS версия 16 может не запуститься с ошибкой `version 'GLIBC_2.29' not found` — тогда берите `17.6.0` или новее.
 
 Перейдите в каталог проекта и установите пакеты Node.js:
 
 ```sh
 cd star-burger
-npm ci --dev
+npm ci
 ```
 
 Команда `npm ci` создаст каталог `node_modules` и установит туда пакеты Node.js. Получится аналог виртуального окружения как для Python, но для Node.js.
@@ -184,8 +254,8 @@ Parcel будет следить за файлами в каталоге `bundle
 
 ## Как запустить prod-версию сайта
 
-Инструкция по развёртыванию на сервере (production), настройке PostgreSQL,
-systemd, Nginx, `.env` для прода и обновлению проекта находится в отдельном файле:
+Инструкция по развёртыванию на сервере (production): настройка PostgreSQL,
+Nginx, `.env` для прода, сборка образов и запуск `deploy.sh` — в отдельном файле:
 
 - [DEPLOY.md](DEPLOY.md)
 
