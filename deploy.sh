@@ -52,7 +52,7 @@ else
 fi
 
 echo "=== 9. Фиксируем deploy ==="
-git push fork deploy || echo "Пуш deploy не удался — пропускаем"
+git push -f fork deploy || echo "Пуш deploy не удался — пропускаем"
 
 echo ""
 echo "✅ Готово!"
