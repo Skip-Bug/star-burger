@@ -31,21 +31,25 @@ echo "=== 7. Запускаем контейнеры ==="
 docker compose -f docker-compose.prod.yml up -d
 
 echo "=== 8. Сообщаем Rollbar ==="
-COMMIT_HASH=$(git rev-parse HEAD)
-ACCESS_TOKEN=$(grep -E '^ROLLBAR_ACCESS_TOKEN=' .env | cut -d= -f2- | tr -d "'\"")
-ROLLBAR_ENV=$(grep -E '^ROLLBAR_ENVIRONMENT=' .env | cut -d= -f2- | tr -d "'\"")
-AUTHOR=$(git log -1 --pretty=format:'%an')
-COMMENT=$(git log -1 --pretty=format:'%s')
+if grep -q '^ROLLBAR_ACCESS_TOKEN=' .env; then
+    COMMIT_HASH=$(git rev-parse HEAD)
+    ACCESS_TOKEN=$(grep -E '^ROLLBAR_ACCESS_TOKEN=' .env | cut -d= -f2- | tr -d "'\"")
+    ROLLBAR_ENV=$(grep -E '^ROLLBAR_ENVIRONMENT=' .env | cut -d= -f2- | tr -d "'\"")
+    AUTHOR=$(git log -1 --pretty=format:'%an')
+    COMMENT=$(git log -1 --pretty=format:'%s')
 
-curl -sS -X POST https://api.rollbar.com/api/1/deploy/ \
-  -H "Content-Type: application/json" \
-  -d "{
-    \"access_token\": \"$ACCESS_TOKEN\",
-    \"environment\": \"$ROLLBAR_ENV\",
-    \"revision\": \"$COMMIT_HASH\",
-    \"local_username\": \"$AUTHOR\",
-    \"comment\": \"$COMMENT\"
-  }" || true
+    curl -sS -X POST https://api.rollbar.com/api/1/deploy/ \
+      -H "Content-Type: application/json" \
+      -d "{
+        \"access_token\": \"$ACCESS_TOKEN\",
+        \"environment\": \"$ROLLBAR_ENV\",
+        \"revision\": \"$COMMIT_HASH\",
+        \"local_username\": \"$AUTHOR\",
+        \"comment\": \"$COMMENT\"
+      }" || true
+else
+    echo "Rollbar не настроен — пропускаем"
+fi
 
 echo "=== 9. Фиксируем deploy ==="
 git push fork deploy || echo "Пуш deploy не удался — пропускаем"
