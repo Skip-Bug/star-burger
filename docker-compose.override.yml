@@ -1,19 +1,35 @@
 services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    image: star-burger-frontend
+    volumes:
+      - ./bundles-src:/app/bundles-src
+      - bundles_data:/app/bundles
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+    command: ./node_modules/.bin/parcel watch bundles-src/index.js --dist-dir bundles --public-url="./"
+    profiles: ["dev"]
+
   web:
     volumes:
       - .:/app
       - /app/.venv
       - /app/node_modules
       - ./media:/app/media
-      - static_data:/app/staticfiles
+      - bundles_data:/app/bundles
     command: python manage.py runserver 0.0.0.0:8000
+
   nginx:
     image: nginx:alpine
     ports:
       - "80:80"
     volumes:
       - ./nginx/star-burger.conf:/etc/nginx/conf.d/default.conf:ro
-      - static_data:/static
       - ./media:/media
     depends_on:
       - web
+
+volumes:
+  bundles_data:

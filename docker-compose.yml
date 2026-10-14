@@ -20,12 +20,10 @@ services:
       - .env
     volumes:
       - ./media:/app/media
-      - static_data:/app/staticfiles
 
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
-  static_data:
   postgres_data:
