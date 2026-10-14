@@ -3,10 +3,13 @@ set -euo pipefail
 
 cd /opt/star-burger
 
-echo "=== 1. Обновляем код ==="
-git pull gitverse master
+echo "=== 1. Обновляем ветку deploy из fork/master ==="
+git checkout deploy
+git fetch fork
+git merge fork/master --no-edit
 
 echo "=== 2. Собираем frontend ==="
+mkdir -p staticfiles media
 docker build -f Dockerfile.frontend -t star-burger-frontend .
 
 echo "=== 3. Собираем web (collectstatic внутри) ==="
@@ -43,6 +46,9 @@ curl -sS -X POST https://api.rollbar.com/api/1/deploy/ \
     \"local_username\": \"$AUTHOR\",
     \"comment\": \"$COMMENT\"
   }" || true
+
+echo "=== 9. Фиксируем deploy ==="
+git push fork deploy || echo "Пуш deploy не удался — пропускаем"
 
 echo ""
 echo "✅ Готово!"
