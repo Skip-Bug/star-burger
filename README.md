@@ -268,3 +268,4 @@ Nginx, `.env` для прода, сборка образов и запуск `de
 Где используется репозиторий:
 
 - Второй и третий урок [учебного курса Django](https://dvmn.org/modules/django/)
+- Второй урок [учебного курса по докеру](https://dvmn.org/modules/docker-v2/lesson/dockerize-django/)
