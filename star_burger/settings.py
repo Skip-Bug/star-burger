@@ -18,6 +18,10 @@ DEBUG = env.bool("DEBUG", False)
 
 ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", ["127.0.0.1", "localhost"])
 
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", [])
+USE_X_FORWARDED_HOST = True
+SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+
 ROLLBAR = {
     "access_token": env.str("ROLLBAR_ACCESS_TOKEN", default=None),
     "environment": env.str("ROLLBAR_ENVIRONMENT", default="development"),
