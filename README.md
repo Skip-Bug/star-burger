@@ -54,6 +54,7 @@ ALLOWED_HOSTS=127.0.0.1,localhost
 POSTGRES_DB=star_burger
 POSTGRES_USER=star_burger_user
 POSTGRES_PASSWORD=ваш_пароль
+# CSRF_TRUSTED_ORIGINS=https://your-domain.com
 ```
 
 - `DATABASE_URL` указывает на сервис `db`: внутри сети Compose база доступна по имени сервиса, а не по `localhost`.
@@ -87,8 +88,9 @@ docker compose exec web python manage.py createsuperuser
 docker compose --profile dev down
 ```
 
-Данные базы и `media/` лежат в docker volumes, поэтому переживают остановку и
-пересоздание контейнеров. Не добавляйте к `down` флаг `-v` — он удалит вместе с
+Данные базы лежат в docker volume `postgres_data`, загруженные
+файлы — в `./media` на хосте (bind mount). И то, и другое переживает
+остановку и пересоздание контейнеров. Не добавляйте к `down` флаг `-v` — он удалит вместе с
 томами и базу данных.
 
 Полезные команды:

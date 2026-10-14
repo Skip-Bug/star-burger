@@ -62,6 +62,7 @@ YANDEX_API_KEY=ключ_из_https://developer.tech.yandex.ru/
 DATABASE_URL=postgres://star_burger_user:пароль@db:5432/star_burger
 DEBUG=False
 ALLOWED_HOSTS=ip_вашего_сервера
+CSRF_TRUSTED_ORIGINS=https://ваш_домен
 POSTGRES_DB=star_burger
 POSTGRES_USER=star_burger_user
 POSTGRES_PASSWORD=пароль
@@ -74,6 +75,7 @@ ROLLBAR_ENVIRONMENT=production
 - `DATABASE_URL` указывает на сервис `db` внутри Docker Compose (`host:port` = `db:5432`).
 - `POSTGRES_*` — переменные, которые Docker Compose передаёт контейнеру PostgreSQL. Они должны совпадать с `DATABASE_URL`.
 - `ALLOWED_HOSTS` — IP-адрес вашего сервера (или домен).
+- `CSRF_TRUSTED_ORIGINS` обязателен для HTTPS. Указывайте полный origin с протоколом: `https://skip-project.githubpage.com`.
 
 ## Первый запуск
 
@@ -183,6 +185,9 @@ Certbot сам:
 - перенастроит Nginx на HTTPS
 - настроит автоперенаправление с HTTP на HTTPS
 
+> После настройки HTTPS убедитесь, что домен в `CSRF_TRUSTED_ORIGINS` в
+> `.env` совпадает с доменом сертификата. Иначе POST-запросы (оформление заказа, вход в админку) будут падать с ошибкой CSRF 403.
+
 ### 3. Автопродление
 
 ```bash
@@ -198,12 +203,13 @@ certbot renew --dry-run
 Основной способ — скрипт `deploy.sh`. Он:
 
 1. Переключается на ветку `deploy`.
-2. Забирает изменения из `origin/master`.
-3. Собирает Docker-образы.
-4. Копирует статику в хостовую папку.
+2. Забирает изменения из `fork/master`.
+3. Собирает Docker-образы (frontend и web).
+4. Копирует статику (bundles + collectstatic) в `./staticfiles/`.
 5. Применяет миграции.
 6. Запускает контейнеры.
-7. Сообщает Rollbar.
+7. Сообщает Rollbar (пропускается, если `ROLLBAR_ACCESS_TOKEN` не задан).
+8. Пушит снимок состояния в `fork/deploy`.
 
 ```bash
 cd /opt/star-burger
@@ -214,7 +220,8 @@ cd /opt/star-burger
 
 ```bash
 cd /opt/star-burger
-git reset --hard deploy@{1}  # или git checkout deploy
+git log --oneline -5                # найти предыдущий рабочий коммит
+git reset --hard <hash>             # откатиться к нему
 ./deploy.sh
 ```
 
