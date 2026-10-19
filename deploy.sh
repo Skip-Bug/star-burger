@@ -9,18 +9,18 @@ git fetch fork
 git merge fork/master --no-edit
 
 echo "=== 2. Собираем frontend ==="
-mkdir -p staticfiles media
-docker build -f Dockerfile.frontend -t star-burger-frontend .
+mkdir -p back/staticfiles back/media
+docker build -f front/Dockerfile -t star-burger-frontend front
 
 echo "=== 3. Собираем web (collectstatic внутри) ==="
-docker build -t star-burger-web .
+docker build -t star-burger-web back
 
 echo "=== 4. Bundles → ./staticfiles/ ==="
-docker run --rm -v "$(pwd)/staticfiles:/out" star-burger-frontend \
+docker run --rm -v "$(pwd)/back/staticfiles:/out" star-burger-frontend \
     sh -c "cp -r /app/bundles/. /out/"
 
 echo "=== 5. Django-статика → ./staticfiles/ ==="
-docker run --rm -v "$(pwd)/staticfiles:/out" star-burger-web \
+docker run --rm -v "$(pwd)/back/staticfiles:/out" star-burger-web \
     sh -c "cp -r /app/staticfiles/. /out/"
 
 echo "=== 6. Применяем миграции ==="
