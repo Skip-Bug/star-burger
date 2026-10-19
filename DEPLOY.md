@@ -133,11 +133,11 @@ server {
     server_name ваш_домен;  # или IP-адрес
 
     location /static/ {
-        alias /opt/star-burger/staticfiles/;
+        alias /opt/star-burger/back/staticfiles/;
     }
 
     location /media/ {
-        alias /opt/star-burger/media/;
+        alias /opt/star-burger/back/media/;
     }
 
     location / {
@@ -160,7 +160,7 @@ systemctl reload nginx
 ```
 
 > **Как работает статика:** `deploy.sh` собирает образы, извлекает бандлы и
-> collectstatic в `/opt/star-burger/staticfiles/`. Nginx отдаёт их напрямую.
+> collectstatic в `/opt/star-burger/back/staticfiles/`. Nginx отдаёт их напрямую.
 > Django-контейнер тоже читает статику из образа, но nginx — основной источник.
 
 ---
@@ -247,12 +247,12 @@ git reset --hard <hash>             # откатиться к нему
 
 ## Сохранность данных
 
-| Что                          | Где                                            | Переживает `docker compose down`?        |
-| ---------------------------- | ---------------------------------------------- | ---------------------------------------- |
-| База данных                  | Docker volume `postgres_data`                  | ✅ да                                    |
-| Загруженные файлы (`media/`) | Bind mount `./media`                           | ✅ да                                    |
-| Статика (`staticfiles/`)     | Хостовая папка `/opt/star-burger/staticfiles/` | ✅ да                                    |
-| Образы                       | Локальный Docker cache                         | ❌ нет (но пересобираются за 1–2 минуты) |
+| Что                          | Где                                                 | Переживает `docker compose down`?        |
+| ---------------------------- | ----------------------------------------------------| ---------------------------------------- |
+| База данных                  | Docker volume `postgres_data`                       | ✅ да                                    |
+| Загруженные файлы (`media/`) | Bind mount `./back/media`                           | ✅ да                                    |
+| Статика (`staticfiles/`)     | Хостовая папка `/opt/star-burger/back/staticfiles/` | ✅ да                                    |
+| Образы                       | Локальный Docker cache                              | ❌ нет (но пересобираются за 1–2 минуты) |
 
 > Не запускайте `docker compose down -v` — он удалит volume `postgres_data`
 > и базу данных.

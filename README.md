@@ -36,7 +36,7 @@ git clone https://github.com/Skip-Bug/star-burger.git
 cd star-burger
 ```
 
-Скопируйте шаблон окружения в `.env` в корне проекта (рядом с `manage.py`):
+Скопируйте шаблон окружения в `.env` в корне проекта:
 
 ```sh
 cp .env.example .env
@@ -121,9 +121,10 @@ python --version
 
 Возможно, вместо команды `python` здесь и в остальных инструкциях этого README придётся использовать `python3`. Зависит это от операционной системы и от того, установлен ли у вас Python старой второй версии.
 
-В каталоге проекта создайте виртуальное окружение:
+Перейдите в каталог back и создайте виртуальное окружение:
 
 ```sh
+cd back
 python -m venv venv
 ```
 
@@ -215,10 +216,10 @@ npm --version
 
 Версия `nodejs` должна быть не младше `10.0` и не старше `16.16`. Лучше ставьте `16.16.0`, её мы тестировали. Версия `npm` не важна. На macOS версия 16 может не запуститься с ошибкой `version 'GLIBC_2.29' not found` — тогда берите `17.6.0` или новее.
 
-Перейдите в каталог проекта и установите пакеты Node.js:
+Перейдите в каталог front и установите пакеты Node.js:
 
 ```sh
-cd star-burger
+cd front
 npm ci
 ```
 
@@ -229,13 +230,13 @@ npm ci
 Теперь запустите сборку фронтенда и не выключайте. Parcel будет работать в фоне и следить за изменениями в JS-коде:
 
 ```sh
-./node_modules/.bin/parcel watch bundles-src/index.js --dist-dir bundles --public-url="./"
+./node_modules/.bin/parcel watch bundles-src/index.js --dist-dir ../back/bundles --public-url="./"
 ```
 
 Если вы на Windows, то вам нужна та же команда, только с другими слешами в путях:
 
 ```sh
-.\node_modules\.bin\parcel watch bundles-src/index.js --dist-dir bundles --public-url="./"
+.\node_modules\.bin\parcel watch bundles-src/index.js --dist-dir ../back/bundles --public-url="./"
 ```
 
 Дождитесь завершения первичной сборки. Это вполне может занять 10 и более секунд. О готовности вы узнаете по сообщению в консоли:
