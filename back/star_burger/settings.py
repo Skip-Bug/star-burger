@@ -3,7 +3,6 @@ import os
 import dj_database_url
 import rollbar  # noqa
 from environs import Env
-
 from star_burger.utils import get_current_git_branch
 
 env = Env()
@@ -138,8 +137,9 @@ STATIC_URL = "/static/"
 
 INTERNAL_IPS = ["127.0.0.1"]
 
-
 STATICFILES_DIRS = [
     os.path.join(BASE_DIR, "assets"),
-    os.path.join(BASE_DIR, "bundles"),
 ]
+
+if DEBUG:
+    STATICFILES_DIRS.append(os.path.join(BASE_DIR, "bundles"))
