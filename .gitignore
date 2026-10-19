@@ -29,6 +29,15 @@ share/python-wheels/
 .installed.cfg
 *.egg
 MANIFEST
+back/venv/
+back/.venv/
+back/__pycache__/
+back/**/__pycache__/
+back/*.pyc
+back/db.sqlite3
+back/db.sqlite3.bak
+back/media/
+back/staticfiles/
 
 # PyInstaller
 #  Usually these files are written by a python script from a template
@@ -116,6 +125,7 @@ venv/
 ENV/
 env.bak/
 venv.bak/
+.DS_Store
 
 # Spyder project settings
 .spyderproject
@@ -141,8 +151,14 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
+# Dev-артефакты
 .parcel-cache/
-db.sqlite3.bak
+node_modules/
 
 staticfiles/
 data.json
+
+# Frontend
+front/node_modules/
+front/.parcel-cache/
+front/bundles/
